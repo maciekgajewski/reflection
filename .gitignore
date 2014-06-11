@@ -19,3 +19,7 @@
 *.exe
 *.out
 *.app
+
+#$ QtCreator project file
+CMakeLists.txt.user
+
