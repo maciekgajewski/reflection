@@ -87,16 +87,85 @@ struct enum_decl_receiver
 	}
 };
 
+struct column_name_receiver
+{
+	column_name_receiver(std::ostream& out) : out_(out) {}
+	std::ostream& out_;
+	bool first_ = true;
+
+	template<typename MetaField>
+	void field()
+	{
+		if (!first_)
+			out_ << ", ";
+		else
+			first_ = false;
+
+		out_ << MetaField::name;
+	}
+};
+
+template<typename T>
+void print_sql_value(std::ostream& out, const T& v)
+{
+	out << v;
+}
+
+template<>
+void print_sql_value<std::string>(std::ostream& out, const std::string& v)
+{
+	out << "'" << v << "'";
+}
+
+template<typename T>
+struct value_receiver
+{
+	value_receiver(std::ostream& out, const T& instance)
+		: out_(out), instance_(instance) {}
+	std::ostream& out_;
+	const T& instance_;
+	bool first_ = true;
+
+	template<typename MetaField>
+	void field()
+	{
+		using type = typename MetaField::type;
+		if (!first_)
+			out_ << ", ";
+		else
+			first_ = false;
+
+		print_sql_value<type>(out_, MetaField::get(instance_));
+	}
+
+};
+
+// generates list of comma-separated column names
+template<typename T>
+void column_names(std::ostream& out)
+{
+	::reflection::meta_object<T>::enumerate_fields(column_name_receiver(out));
+}
+
+// generates list of comma-separated record values
+template<typename T>
+void values(std::ostream& out, const T& record)
+{
+	::reflection::meta_object<T>::enumerate_fields(value_receiver<T>(out, record));
+}
+
+
+
 } // detail
 
 // Creates valid, Postgres definiton of table to hold values of specific type
 template<typename T>
 void generate_table_definition(std::ostream& out, const std::string& table_name)
 {
+	using meta = ::reflection::meta_object<T>;
+
 	out << "CREATE TABLE " << table_name << " (\n";
-
-	::reflection::meta_object<T>::enumerate_fields(detail::table_def_field_receiver(out));
-
+	meta::enumerate_fields(detail::table_def_field_receiver(out));
 	out << "\n);" << std::endl;
 }
 
@@ -108,6 +177,38 @@ void generate_enum_definion(std::ostream& out)
 	out << "CREATE TYPE " << meta::name << " AS ENUM (";
 	meta::enumerate_values(detail::enum_decl_receiver(out));
 	out << ");" << std::endl;
+}
+
+// Creates insert statemen for object range
+template<typename Range>
+void generate_insert(std::ostream& out, const std::string& table_name, const Range& range)
+{
+	using t = decltype(*std::begin(range));
+	using type = typename std::remove_cv<typename std::remove_reference<t>::type>::type;
+	//using meta = ::reflection::meta_object<type>;
+
+	auto first = std::begin(range);
+	const auto last = std::end(range);
+
+	if (first != last)
+	{
+		out << "INSERT INTO " << table_name << " (";
+		detail::column_names<type>(out);
+		out << ") VALUES ";
+
+		bool f = true;
+		for(;first != last; ++first)
+		{
+			if (!f) out << ", ";
+			else f = false;
+
+			out << "(";
+			detail::values<type>(out, *first);
+			out << ")";
+		}
+
+		out << ";" << std::endl;
+	}
 }
 
 } // ns

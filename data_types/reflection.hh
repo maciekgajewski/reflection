@@ -38,7 +38,7 @@ struct _meta_field<Class, Type, Ordinal>\
 	static constexpr const char* name = #Name;\
 \
 	static void set(class_type& instance, const type& value) { instance.Name = value; }\
-	static type get(class_type& instance) { return instance.Name; }\
+	static const type& get(const class_type& instance) { return instance.Name; }\
 };
 
 
