@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simple_struct.hh"
+#include "simple_class.hh"
 
 #include <type_traits>
 
@@ -25,12 +26,15 @@ struct meta_enum;
 // The type definition is an impelmentation detail, available via meta_object.
 // Ordinal is used only to make the type unique. Field name would be better, but using const char* as template
 // params is bit unwieldy in C++
-template<typename Class, typename type, int Ordinal>
+template<typename Class, int Ordinal>
 struct _meta_field;
+
+template<typename Class, int Ordinal>
+struct _meta_method;
 
 #define META_FIELD(Class, Type, Name, Ordinal) \
 template<>\
-struct _meta_field<Class, Type, Ordinal>\
+struct _meta_field<Class, Ordinal>\
 {\
 	using class_type = Class;\
 	using type = Type;\
@@ -63,9 +67,9 @@ struct meta_object<::record1>
 
 	struct field_types
 	{
-		using number = _meta_field<::record1, int, 0>;
-		using angle = _meta_field<::record1, double, 1>;
-		using name = _meta_field<::record1, std::string, 2>;
+		using number = _meta_field<::record1, 0>;
+		using angle = _meta_field<::record1, 1>;
+		using name = _meta_field<::record1, 2>;
 	};
 
 	template<typename Receiver>
@@ -121,9 +125,9 @@ struct meta_object<::record2>
 
 	struct field_types
 	{
-		using size = _meta_field<::record2, std::int64_t, 0>;
-		using location = _meta_field<::record2, std::string, 1>;
-		using type = _meta_field<::record2, ::some_enum, 2>;
+		using size = _meta_field<::record2, 0>;
+		using location = _meta_field<::record2, 1>;
+		using type = _meta_field<::record2, 2>;
 	};
 
 	template<typename Receiver>
@@ -138,6 +142,62 @@ struct meta_object<::record2>
 META_FIELD(::record2, std::int64_t, size, 0)
 META_FIELD(::record2, std::string, location, 1)
 META_FIELD(::record2, ::some_enum, type, 2)
+
+
+//////////////////////////////////////////////
+// Simple class
+
+template<>
+struct meta_object<::ProjectNamespace::SimpleClass>
+{
+	using type = ::ProjectNamespace::SimpleClass;
+
+	static constexpr const char* name = "SimpleClass";
+	static constexpr const char* qualified_name = "::ProjectNamespace::SimpleClass";
+
+	struct method_types
+	{
+		using AddToCounter = _meta_method<::ProjectNamespace::SimpleClass, 0>;
+		using GetCounter = _meta_method<::ProjectNamespace::SimpleClass, 1>;
+	};
+
+	template<typename Receiver>
+	static void enumerate_methods(Receiver&& r)
+	{
+		r.template method<method_types::AddToCounter>();
+		r.template method<method_types::GetCounter>();
+	}
+};
+
+template<>
+struct _meta_method<::ProjectNamespace::SimpleClass, 0>
+{
+	using class_type = ::ProjectNamespace::SimpleClass;
+
+	static constexpr const char* name = "AddToCounter";
+
+	using signature = void(unsigned);
+
+	static void call(class_type& _instance, unsigned value)
+	{
+		_instance.AddToCounter(value);
+	}
+};
+
+template<>
+struct _meta_method<::ProjectNamespace::SimpleClass, 1>
+{
+	using class_type = ::ProjectNamespace::SimpleClass;
+
+	static constexpr const char* name = "GetCounter";
+
+	using signature = unsigned();
+
+	static unsigned call(class_type& _instance)
+	{
+		return _instance.GetCounter();
+	}
+};
 
 
 } // ns
