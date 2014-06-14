@@ -158,14 +158,18 @@ struct meta_object<::ProjectNamespace::SimpleClass>
 	struct method_types
 	{
 		using AddToCounter = _meta_method<::ProjectNamespace::SimpleClass, 0>;
-		using GetCounter = _meta_method<::ProjectNamespace::SimpleClass, 1>;
+		using SetName = _meta_method<::ProjectNamespace::SimpleClass, 1>;
+		using GetCounter = _meta_method<::ProjectNamespace::SimpleClass, 2>;
+		using GetName = _meta_method<::ProjectNamespace::SimpleClass, 3>;
 	};
 
 	template<typename Receiver>
 	static void enumerate_methods(Receiver&& r)
 	{
 		r.template method<method_types::AddToCounter>();
+		r.template method<method_types::SetName>();
 		r.template method<method_types::GetCounter>();
+		r.template method<method_types::GetName>();
 	}
 };
 
@@ -182,10 +186,38 @@ struct _meta_method<::ProjectNamespace::SimpleClass, 0>
 	{
 		_instance.AddToCounter(value);
 	}
+
+	template<typename Receiver>
+	static void enumerate_params(Receiver&& r)
+	{
+		r.template param<unsigned>("value");
+	}
 };
 
 template<>
 struct _meta_method<::ProjectNamespace::SimpleClass, 1>
+{
+	using class_type = ::ProjectNamespace::SimpleClass;
+
+	static constexpr const char* name = "SetName";
+
+	using signature = void(const std::string&, int);
+
+	static void call(class_type& _instance, const std::string& name, int number)
+	{
+		_instance.SetName(name, number);
+	}
+
+	template<typename Receiver>
+	static void enumerate_params(Receiver&& r)
+	{
+		r.template param<const std::string&>("name");
+		r.template param<int>("number");
+	}
+};
+
+template<>
+struct _meta_method<::ProjectNamespace::SimpleClass, 2>
 {
 	using class_type = ::ProjectNamespace::SimpleClass;
 
@@ -197,7 +229,31 @@ struct _meta_method<::ProjectNamespace::SimpleClass, 1>
 	{
 		return _instance.GetCounter();
 	}
+
+	template<typename Receiver>
+	static void enumerate_params(Receiver&& r)
+	{
+	}
 };
 
+template<>
+struct _meta_method<::ProjectNamespace::SimpleClass, 3>
+{
+	using class_type = ::ProjectNamespace::SimpleClass;
+
+	static constexpr const char* name = "GetName";
+
+	using signature = std::string();
+
+	static std::string call(class_type& _instance)
+	{
+		return _instance.GetName();
+	}
+
+	template<typename Receiver>
+	static void enumerate_params(Receiver&& r)
+	{
+	}
+};
 
 } // ns

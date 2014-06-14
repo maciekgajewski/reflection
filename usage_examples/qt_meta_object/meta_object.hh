@@ -63,8 +63,14 @@ private:
 
 	template <typename T> friend class Detail::MetaObjectMaker;
 
-	MetaMethod(QByteArray&& name)
+	MetaMethod(
+		QByteArray&& name,
+		QList<QByteArray>&& paramNames,
+		QList<QByteArray>&& paramTypes
+		)
 		: name_(name)
+		, paramNames_(std::move(paramNames))
+		, paramTypes_(std::move(paramTypes))
 	{
 	}
 
