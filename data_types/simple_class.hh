@@ -12,7 +12,7 @@ public:
 	SimpleClass();
 
 	void AddToCounter(unsigned value);
-	void SetName(const std::string& name, int number) { mName = name + std::to_string(number); }
+	void SetName(const std::string& name, int number);
 
 	unsigned GetCounter() const { return mCounter; }
 	std::string GetName() const { return mName; }

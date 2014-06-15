@@ -6,6 +6,8 @@
 #include <QGenericReturnArgument>
 #include <QGenericArgument>
 
+#include <memory>
+
 namespace QtLike
 {
 
@@ -16,13 +18,13 @@ class MetaObject;
 
 namespace Detail {
 
-class MetaMethodImpl
+class BaseMetaMethodImpl
 {
 public:
 
 	virtual void invoke(
 		void* object, // void* instead of QObject*
-		QGenericReturnArgument returnValue,
+		QGenericReturnArgument returnValue = QGenericReturnArgument(),
 		QGenericArgument arg0 = QGenericArgument(),
 		QGenericArgument arg1 = QGenericArgument(),
 		QGenericArgument arg2 = QGenericArgument()
@@ -41,11 +43,13 @@ class MetaMethod
 {
 public:
 
+	MetaMethod() = default;
+
 	bool isValid() const { return !!impl_; }
 
 	void invoke(
 		void* object, // void* instead of QObject*
-		QGenericReturnArgument returnValue,
+		QGenericReturnArgument returnValue = QGenericReturnArgument(),
 		QGenericArgument arg0 = QGenericArgument(),
 		QGenericArgument arg1 = QGenericArgument(),
 		QGenericArgument arg2 = QGenericArgument()
@@ -66,11 +70,13 @@ private:
 	MetaMethod(
 		QByteArray&& name,
 		QList<QByteArray>&& paramNames,
-		QList<QByteArray>&& paramTypes
+		QList<QByteArray>&& paramTypes,
+		Detail::BaseMetaMethodImpl* impl
 		)
 		: name_(name)
 		, paramNames_(std::move(paramNames))
 		, paramTypes_(std::move(paramTypes))
+		, impl_(impl)
 	{
 	}
 
@@ -78,7 +84,7 @@ private:
 	QList<QByteArray> paramNames_;
 	QList<QByteArray> paramTypes_;
 
-	Detail::MetaMethodImpl* impl_ = nullptr;
+	Detail::BaseMetaMethodImpl* impl_ = nullptr;
 };
 
 class MetaProperty

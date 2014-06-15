@@ -38,4 +38,17 @@ int main()
 	QtLike::MetaObject* metaObject = QtLike::getMetaObject<ProjectNamespace::SimpleClass>();
 
 	printObjectData(metaObject);
+
+	QtLike::MetaMethod setNameMethod;
+	for (int i = 0; i < metaObject->methodCount(); ++i)
+	{
+		if (metaObject->method(i).name() == "SetName")
+		{
+			setNameMethod = metaObject->method(i);
+		}
+	}
+
+	ProjectNamespace::SimpleClass simpleClass;
+
+	setNameMethod.invoke(&simpleClass, QGenericReturnArgument(), Q_ARG(std::string, "halo"), Q_ARG(int, 42));
 }
