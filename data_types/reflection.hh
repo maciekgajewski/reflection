@@ -53,6 +53,10 @@ struct _meta_field<Class, Ordinal>\
 template<typename Class, int Ordinal>
 struct _meta_method;
 
+// namespaces
+struct root_namespace;
+
+struct _namespace_ProjectNamespace;
 
 
 ////////////////////////////////
@@ -62,9 +66,9 @@ template<>
 struct meta_object<::record1>
 {
 	using type = ::record1;
+	using parent_namespace = root_namespace;
 
 	static constexpr const char* name = "record1";
-	static constexpr const char* qualified_name = "::record1";
 
 	struct field_types
 	{
@@ -97,9 +101,9 @@ struct meta_enum<::some_enum>
 {
 	using type = ::some_enum;
 	using underlying_type = std::underlying_type<type>::type;
+	using parent_namespace = root_namespace;
 
 	static constexpr const char* name = "some_enum";
-	static constexpr const char* qualified_name = "::some_enum";
 
 	static constexpr underlying_type min = 0;
 	static constexpr underlying_type max = 7;
@@ -120,9 +124,9 @@ template<>
 struct meta_object<::record2>
 {
 	using type = ::record2;
+	using parent_namespace = root_namespace;
 
 	static constexpr const char* name = "record2";
-	static constexpr const char* qualified_name = "::record2";
 
 	struct field_types
 	{
@@ -152,9 +156,9 @@ template<>
 struct meta_object<::ProjectNamespace::SimpleClass>
 {
 	using type = ::ProjectNamespace::SimpleClass;
+	using parent_namespace = _namespace_ProjectNamespace;
 
 	static constexpr const char* name = "SimpleClass";
-	static constexpr const char* qualified_name = "::ProjectNamespace::SimpleClass";
 
 	struct method_types
 	{
@@ -279,6 +283,49 @@ struct _meta_method<::ProjectNamespace::SimpleClass, 3>
 	static void enumerate_params(Receiver&& r)
 	{
 	}
+};
+
+struct	_namespace_ProjectNamespace
+{
+	using parent_namespace = root_namespace;
+	static constexpr const char* name = "ProjectNamespace";
+
+	template<typename Receiver>
+	static void enumerate_classes(Receiver&& r)
+	{
+		r.template class_<ProjectNamespace::SimpleClass>();
+	}
+
+	template<typename Receiver>
+	static void enumerate_enums(Receiver&& r)
+	{
+	}
+
+	template<typename Receiver>
+	static void enumerate_namespaces(Receiver&& r)
+	{
+	}
+};
+
+struct root_namespace
+{
+	template<typename Receiver>
+	static void enumerate_classes(Receiver&& r)
+	{
+		r.template class_<::record1>();
+		r.template class_<::record2>();
+	}
+
+	template<typename Receiver>
+	static void enumerate_enums(Receiver&& r)
+	{
+		r.template enum_<::some_enum>();
+	}
+
+	template<typename Receiver>
+	static void enumerate_namespaces(Receiver&& r)
+	{
+	};
 };
 
 } // ns
