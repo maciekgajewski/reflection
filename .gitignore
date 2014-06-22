@@ -22,4 +22,5 @@
 
 #$ QtCreator project file
 CMakeLists.txt.user
-
+# python
+__pycache__
