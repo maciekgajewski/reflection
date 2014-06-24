@@ -5,8 +5,10 @@
 # * Cmake running with -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 # * clang-check in path
 #
-# Usage: reflection_generator.py BUID_DIR INPUT_FILE OUTPUT_FILE
-#
+
+def usage():
+	print("Usage: reflection_generator.py BUID_DIR SOURCE_DIR INPUT_FILE OUTPUT_FILE")
+
 
 import sys
 import os
@@ -18,12 +20,13 @@ import generator
 CLANG_CHECK = 'clang-check'
 
 if len(sys.argv) < 3:
-	print("Usage: reflection_generator.py BUID_DIR INPUT_FILE OUTPUT_FILE")
+	usage()
 	sys.exit(1)
 
 build_dir = sys.argv[1]
-input_file = sys.argv[2]
-output_file = sys.argv[3]
+source_dir = sys.argv[2]
+input_file = sys.argv[3]
+output_file = sys.argv[4]
 
 # generate temp file
 input_file_full_path = os.path.abspath(input_file)
@@ -39,7 +42,7 @@ p = subprocess.Popen(
 	)
 
 # parse ouput
-gen = generator.Generator()
+gen = generator.Generator(os.path.abspath(source_dir))
 
 cleaner = re.compile('\\033\[[0-9;m]*')
 for line in p.stdout:

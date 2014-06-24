@@ -1,9 +1,19 @@
 #pragma once
 
+#include <memory>
+
 #include <string>
 
 namespace ProjectNamespace
 {
+
+namespace Detail
+{
+	struct SomeDetails
+	{
+		std::shared_ptr<std::string> mValue;
+	};
+}
 
 class SimpleClass
 {
@@ -21,6 +31,7 @@ private:
 
 	unsigned mCounter;
 	std::string mName;
+	Detail::SomeDetails mGoryDetails;
 };
 
 }
