@@ -8,4 +8,5 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # usewd by clang-check
 
 add_subdirectory(data_types)
 add_subdirectory(usage_examples)
+add_subdirectory(clang_generator)
 
