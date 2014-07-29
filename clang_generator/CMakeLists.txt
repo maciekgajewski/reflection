@@ -1,13 +1,21 @@
-include_directories(/usr/lib/llvm-3.5/include)
-#link_directories(/usr/lib/llvm-3.5/lib)
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -fno-rtti")
+#set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -fno-rtti")
 
-add_executable(clang_generator
+set(LLVM_LINK_COMPONENTS
+    MCParser
+    Option
+    MC
+    TransformUtils
+    BitReader
+    Core
+    Support
+  )
+
+add_clang_executable(reflection_generator
 
 	main.cpp
 )
 
-target_link_libraries(clang_generator
+target_link_libraries(reflection_generator
 	clangFrontend
 	clangDriver
 	clangSerialization
@@ -19,17 +27,17 @@ target_link_libraries(clang_generator
 	clangAST
 	clangBasic
 
-	LLVMMCParser
-	LLVMOption
-	LLVMMC
-	LLVMTransformUtils
-	LLVMBitReader
-	LLVMCore
-	LLVMSupport
+#	LLVMMCParser
+#	LLVMOption
+#	LLVMMC
+#	LLVMTransformUtils
+#	LLVMBitReader
+#	LLVMCore
+#	LLVMSupport
 
-	tinfo
-	dl
-	pthread
+#	tinfo
+#	dl
+#	pthread
 )
 
 

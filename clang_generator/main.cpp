@@ -1,5 +1,5 @@
-#define __STDC_CONSTANT_MACROS
-#define __STDC_LIMIT_MACROS
+//#define __STDC_CONSTANT_MACROS
+//#define __STDC_LIMIT_MACROS
 
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/CompilerInvocation.h>
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 
 			ci.createFileManager();
 			ci.createSourceManager(ci.getFileManager());
-			ci.createPreprocessor();
+			ci.createPreprocessor(clang::TU_Complete);
 			ci.createASTContext();
 
 			MyAstConsumer astConsumer;
