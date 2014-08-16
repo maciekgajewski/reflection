@@ -1,24 +1,58 @@
-//#define __STDC_CONSTANT_MACROS
-//#define __STDC_LIMIT_MACROS
-
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendAction.h>
-//#include <clang/Frontend/CompilerInvocation.h>
-//#include <clang/Frontend/TextDiagnosticPrinter.h>
 
+#include <clang/AST/ASTContext.h>
 #include <clang/AST/ASTConsumer.h>
-
-//#include <clang/Parse/ParseAST.h>
-
-//#include <clang/Basic/Version.h>
-//#include <clang/Basic/TargetInfo.h>
-//#include <clang/Basic/Diagnostic.h>
+#include <clang/AST/RecursiveASTVisitor.h>
 
 #include <clang/Tooling/Tooling.h>
 #include <clang/Tooling/CommonOptionsParser.h>
 
+#include <llvm/Support/CommandLine.h>
+
 #include <iostream>
 
+
+class MyAstVisitor : public clang::RecursiveASTVisitor<MyAstVisitor>
+{
+public:
+
+	virtual ~MyAstVisitor() {}
+
+//	bool virtual VisitNamespaceDecl(clang::NamespaceDecl* nsDecl)
+//	{
+//		clang::IdentifierInfo* ii = nsDecl->getIdentifier();
+//		std::cout << "ns: " ;
+//		if (ii)
+//		{
+//			llvm::StringRef s = ii->getName();
+//			std::cout << s.str();
+//		}
+//		std::cout << std::endl;
+
+//		return true;
+//	}
+
+	virtual bool VisitEnumDecl(clang::EnumDecl* decl)
+	{
+		clang::IdentifierInfo* ii = decl->getIdentifier();
+		if (ii)
+		{
+			std::string fqn = decl->getQualifiedNameAsString();
+			std::cout << "enum: " << ii->getName().str() << " (" << fqn << ")" << std::endl;
+
+			if (decl->hasAttrs())
+			{
+				clang::AttrVec attrs = decl->getAttrs();
+				for(clang::Attr* attr : attrs)
+				{
+					std::cout << "* attr: " << attr->getSpelling() << std::endl;
+				}
+			}
+		}
+		return true;
+	}
+};
 
 class MyAstConsumer : public clang::ASTConsumer
 {
@@ -26,10 +60,13 @@ public:
 
 	virtual void HandleTranslationUnit(clang::ASTContext& ctx) override
 	{
-		std::cout << "Boom!" << std::endl;
+		MyAstVisitor visitor;
+		visitor.TraverseDecl(ctx.getTranslationUnitDecl());
 	}
 
 };
+
+static llvm::cl::opt<std::string> OptionOut("o", llvm::cl::desc("Specify output filename"), llvm::cl::value_desc("filename"));
 
 class MyAction : public clang::ASTFrontendAction
 {
@@ -37,6 +74,8 @@ protected:
 	virtual clang::ASTConsumer *CreateASTConsumer(
 		clang::CompilerInstance& compiler, llvm::StringRef inFile) override
 	{
+		llvm::raw_fd_ostream* out = compiler.createOutputFile(OptionOut.getValue(), false, false, "", "", true);
+		*out << "Hello!\n";
 		return new MyAstConsumer();
 	}
 };
@@ -44,85 +83,16 @@ protected:
 
 int main(int argc, const char** argv)
 {
-	llvm::cl::OptionCategory toolCategory("my-tool options");
+	llvm::cl::OptionCategory toolCategory("reflection_generator options");
 
 	clang::tooling::CommonOptionsParser optionsParser(argc, argv, toolCategory);
 
 	auto sources = optionsParser.getSourcePathList();
 
+
 	clang::tooling::ClangTool tool(optionsParser.getCompilations(), sources);
 
 	int result = tool.run(clang::tooling::newFrontendActionFactory<MyAction>().get());
 
-//	if (argc > 1) {
-//		clang::tooling::runToolOnCode(new MyAction, argv[1]);
-//	}
-
-//	llvm::IntrusiveRefCntPtr<clang::DiagnosticOptions> diagOpts = new clang::DiagnosticOptions();
-
-//	clang::TextDiagnosticPrinter* diagClient = new clang::TextDiagnosticPrinter(llvm::errs(), &*diagOpts);
-
-
-//	llvm::IntrusiveRefCntPtr<clang::DiagnosticIDs> diagID(new clang::DiagnosticIDs());
-
-//	clang::DiagnosticsEngine diags(diagID, &*diagOpts, diagClient);
-
-//	clang::CompilerInstance ci;
-//	ci.setDiagnostics(&diags);
-
-
-//	clang::CompilerInvocation in;
-//	clang::CompilerInvocation::CreateFromArgs(in, argv+1, argv + argc, ci.getDiagnostics());
-
-//	if (in.getFrontendOpts().ShowHelp)
-//	{
-//		std::cout << "This is help" << std::endl;
-//	}
-//	else if (in.getFrontendOpts().Inputs.empty())
-//	{
-//		std::cout << "No inputs" << std::endl;
-//	}
-//	else
-//	{
-////		llvm::IntrusiveRefCntPtr<clang::vfs::FileSystem> fs = clang::vfs::getRealFileSystem();
-////		clang::SourceManager sourceManager(diags, fs);
-////		clang::TargetInfo targetInfo(diags, in.getTargetOpts());
-
-////		clang::HeaderSearch headerSearch(in.getHeaderSearchOpts(), sourceManager, diags, in.getLangOpts(), &targetInfo);
-
-
-//		for(const auto& input : in.getFrontendOpts().Inputs)
-//		{
-//			std::string f = input.getFile();
-//			std::cout << "Input: " << f << std::endl;
-
-
-
-
-////			clang::Preprocessor pp(
-////				in.getPreprocessorOpts(),
-////				diags,
-////				in.getLangOpts(),
-////				sourceManager,
-////				headerSearch,
-
-//			ci.createFileManager();
-//			ci.createSourceManager(ci.getFileManager());
-//			ci.createPreprocessor(clang::TU_Complete);
-//			ci.createASTContext();
-
-//			MyAstConsumer astConsumer;
-
-//			ci.setASTConsumer(&astConsumer);
-
-//			ci.createSema(clang::TU_Complete, nullptr);
-//			ci.InitializeSourceManager(input);
-
-//			clang::ParseAST(ci.getSema(), true);
-//			//clang::ParseAST(pp, &astConsumer, ctx);
-
-
-//		}
-//	}
-
+	return result;
 }
