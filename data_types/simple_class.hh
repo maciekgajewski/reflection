@@ -7,6 +7,12 @@
 namespace ProjectNamespace
 {
 
+enum class AnotherEnum
+{
+	One,
+	Two = 7
+};
+
 namespace Detail
 {
 	struct SomeDetails

@@ -3,13 +3,13 @@
 #include <string>
 #include <cstdint>
 
+
 struct record1
 {
 	int number;
 	double angle;
 	std::string name;
 };
-
 
 enum some_enum
 {
@@ -24,3 +24,4 @@ struct record2
 	std::string location;
 	some_enum type;
 };
+
