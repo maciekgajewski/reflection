@@ -4,7 +4,7 @@
 
 #include <llvm/Support/raw_ostream.h>
 
-#include <unordered_set>
+#include <unordered_map>
 
 namespace reflection_generator
 {
@@ -23,12 +23,35 @@ struct main_output : public output
 
 	~main_output();
 
-	void emit_enum(clang::EnumDecl* decl);
-	void emit_namespace(clang::NamespaceDecl* decl);
+	void emit_enum(const clang::EnumDecl* decl);
 
 private:
 
-	std::unordered_set<clang::NamedDecl*> emitted_namespaces_;
+	struct scope_t
+	{
+		std::string generated_type_name_;
+		std::string qualified_name_;
+		std::string error_;
+		bool anonymous_;
+	};
+
+	main_output::scope_t& emit_root_namespace();
+	main_output::scope_t& emit_namespace(const clang::NamespaceDecl* decl);
+
+	// gets (creates if neccesary) parent scope for declaration
+	scope_t& get_or_create_parent_scope(const clang::DeclContext* ctx);
+	scope_t& create_scope(const clang::DeclContext* ctx);
+
+
+
+	scope_t& insert(const clang::DeclContext* ctx, scope_t&& scope)
+	{
+		auto res = scopes_.insert(std::make_pair(ctx, std::move(scope)));
+		assert(res.second);
+		return res.first->second;
+	}
+
+	std::unordered_map<const clang::DeclContext*, scope_t> scopes_;
 };
 
 

@@ -25,11 +25,12 @@ public:
 		return true;
 	}
 
-	virtual bool VisitNamespaceDecl(clang::NamespaceDecl* decl)
-	{
-		main_out_.emit_namespace(decl);
-		return true;
-	}
+// NOm lets emit them on need-to-have basis
+//	virtual bool VisitNamespaceDecl(clang::NamespaceDecl* decl)
+//	{
+//		main_out_.emit_namespace(decl);
+//		return true;
+//	}
 
 private:
 
