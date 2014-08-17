@@ -39,7 +39,8 @@ private:
 	main_output::scope_t& emit_namespace(const clang::NamespaceDecl* decl);
 
 	// gets (creates if neccesary) parent scope for declaration
-	scope_t& get_or_create_parent_scope(const clang::DeclContext* ctx);
+	scope_t& get_or_create_parent_scope(const clang::NamedDecl* decl);
+	scope_t& get_or_create_scope(const clang::DeclContext* ctx);
 	scope_t& create_scope(const clang::DeclContext* ctx);
 
 
