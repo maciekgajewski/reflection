@@ -15,6 +15,8 @@ main_output::main_output(llvm::raw_ostream& out) : output(out)
 	out_ <<
 		"#pragma once\n"
 		"\n"
+		"#include <stdexcept>\n"
+		"\n"
 		"namespace reflection\n"
 		"{\n"
 		"\n"
@@ -87,7 +89,6 @@ main_output::scope_t& main_output::emit_namespace(const clang::NamespaceDecl* nd
 	}
 
 	const clang::DeclContext* as_decl = static_cast<const clang::DeclContext*>(orig);
-	std::cerr << "orig=" << (const void*)orig << ", as decl=" << (const void*)as_decl << std::endl;
 	return insert(as_decl, std::move(ns_scope));
 }
 
@@ -112,6 +113,7 @@ void main_output::emit_enum(const clang::EnumDecl* decl)
 		llvm::raw_string_ostream ss(buf);
 		ss << parent.qualified_name_ << "::" << ii->getName();
 		std::string qualified_name = std::move(ss.str());
+		std::string promotion_type = decl->getPromotionType().getAsString();
 
 		// constant meta-types
 		struct enum_const
@@ -126,11 +128,12 @@ void main_output::emit_enum(const clang::EnumDecl* decl)
 		{
 			clang::EnumConstantDecl* constDecl = *it;
 
-			ss << "_const_enum_" << ii->getName() << "_" << std::uintptr_t(constDecl);
-			std::string generated_name = std::move(ss.str());
-
 			constDecl->printName(ss);
 			std::string name = std::move(ss.str());
+
+			ss << "_const_enum_" << ii->getName() << "_" << name << "_" << std::uintptr_t(constDecl); // ptr added ot ensure uniqueness (and anonimity)
+			std::string generated_name = std::move(ss.str());
+
 
 			enum_constants.push_back({name, generated_name, constDecl->getInitVal().toString(10)});
 		}
@@ -141,23 +144,90 @@ void main_output::emit_enum(const clang::EnumDecl* decl)
 				"struct " << p.generated_type_name << "\n"
 				"{\n"
 				"	static const char* name = \"" << p.name << "\";\n"
-				"	static const int value = " << p.value << ";\n"
-				"}\n"
+				"	static const " << promotion_type << " value = " << p.value << ";\n"
+				"	using parent_scope = " << qualified_name << ";\n"
+				"};\n"
 				"\n"
 			;
 		}
 
+		// prolog
 		out_ <<
 			"template<>\n"
 			"struct meta_type<" << qualified_name << ">\n"
 			"{\n"
 			"	static const char* name = \"" << ii->getName() << "\";\n"
 			"	using type = " << qualified_name << ";\n"
+			"	using promotion_type = " << promotion_type << ";\n"
 			"	using parent_scope = " << parent.generated_type_name_ << ";\n"
+			"\n"
+		;
+
+		// constants
+		out_ <<
+			"	struct constants\n"
+			"	{\n"
+		;
+		for(auto& p : enum_constants)
+		{
+			out_ <<
+			"		using " << p.name << " = " << p.generated_type_name << ";\n"
+			;
+		}
+		out_ <<
+			"	}\n"
+			"\n"
+		;
+
+		// enumerate
+		out_ <<
+			"	template<typename Receiver>\n"
+			"	static void enumerate_constants(Receiver& r)\n"
+			"	{\n"
+			;
+		for(auto& p : enum_constants)
+		{
+			out_ <<
+			"		r->template on_constant<" << p.generated_type_name << ">();\n"
+			;
+		}
+		out_ <<
+			"	}\n"
+			"\n"
 			;
 
-		// TODO enumerate and dispatch here
+		// dispatch
+		out_ <<
+			"	template<typename Receiver>\n"
+			"	static void dispatch(Receiver& r, " << qualified_name << " value)\n"
+			"	{\n"
+			"		switch(value)\n"
+			"		{\n"
+			;
+		for(auto& p : enum_constants)
+		{
+			out_ <<
+			"			case " << parent.qualified_name_ << "::"
+			;
+			if (decl->isScoped()) // suport C++11 scoped enums
+			{
+				out_ << ii->getName() << "::";
+			}
+			out_ <<
+			p.name << ":\n"
+			"				r->template on_value<" << p.generated_type_name << ">();\n"
+			"				break;\n"
+			;
+		}
+		out_ <<
+			"			default:\n"
+			"				throw std::runtime_error(\"Invalid value of " << qualified_name << "\");\n"
+			"		}\n"
+			"	}\n"
+			"\n"
+		;
 
+		// epilogue
 
 		out_ <<
 			"};\n"
@@ -199,7 +269,6 @@ main_output::scope_t& main_output::create_scope(const clang::DeclContext* ctx)
 	// other ns
 	if (const clang::NamespaceDecl* nd = llvm::dyn_cast<clang::NamespaceDecl>(ctx))
 	{
-		std::cerr << "ctx=" << (const void*)ctx << ", nd=" << (const void*)nd << std::endl;
 		return emit_namespace(nd);
 	}
 	// record
