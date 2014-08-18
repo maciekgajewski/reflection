@@ -80,7 +80,7 @@ main_output::scope_t& main_output::emit_namespace(const clang::NamespaceDecl* nd
 			"struct " << ns_scope.generated_type_name_ << "\n"
 			"{\n"
 			"	static const char* name = \"" << name << "\";\n"
-			"	using parent = " << parent.generated_type_name_ << ";\n"
+			"	using parent_scope = " << parent.generated_type_name_ << ";\n"
 			"}\n"
 			"\n"
 		;
@@ -102,21 +102,50 @@ void main_output::emit_enum(const clang::EnumDecl* decl)
 		scope_t& parent = get_or_create_parent_scope(decl);
 		if (parent.anonymous_)
 		{
-			// TODO proper waring system
+			// TODO proper warning system
 			std::cerr << "Not emiting enum " << ii->getName().str() << " : " << parent.error_ << std::endl;
 			return;
 		}
 
-		std::string generated_name;
-		if (parent.anonymous_)
-		{
-			return;
-		}
 
 		std::string buf;
 		llvm::raw_string_ostream ss(buf);
 		ss << parent.qualified_name_ << "::" << ii->getName();
-		std::string qualified_name = ss.str();
+		std::string qualified_name = std::move(ss.str());
+
+		// constant meta-types
+		struct enum_const
+		{
+			std::string name;
+			std::string generated_type_name;
+			std::string value;
+		};
+
+		std::vector<enum_const> enum_constants; // generated name, fully-qualified name
+		for (auto it = decl->enumerator_begin(); it != decl->enumerator_end(); ++it)
+		{
+			clang::EnumConstantDecl* constDecl = *it;
+
+			ss << "_const_enum_" << ii->getName() << "_" << std::uintptr_t(constDecl);
+			std::string generated_name = std::move(ss.str());
+
+			constDecl->printName(ss);
+			std::string name = std::move(ss.str());
+
+			enum_constants.push_back({name, generated_name, constDecl->getInitVal().toString(10)});
+		}
+
+		for(auto& p : enum_constants)
+		{
+			out_ <<
+				"struct " << p.generated_type_name << "\n"
+				"{\n"
+				"	static const char* name = \"" << p.name << "\";\n"
+				"	static const int value = " << p.value << ";\n"
+				"}\n"
+				"\n"
+			;
+		}
 
 		out_ <<
 			"template<>\n"
@@ -124,10 +153,11 @@ void main_output::emit_enum(const clang::EnumDecl* decl)
 			"{\n"
 			"	static const char* name = \"" << ii->getName() << "\";\n"
 			"	using type = " << qualified_name << ";\n"
-			"	using parent = " << parent.generated_type_name_ << ";\n"
+			"	using parent_scope = " << parent.generated_type_name_ << ";\n"
 			;
 
 		// TODO enumerate and dispatch here
+
 
 		out_ <<
 			"};\n"
