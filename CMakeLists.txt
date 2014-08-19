@@ -4,9 +4,12 @@ cmake_minimum_required(VERSION 2.8.8)
 include_directories(.)
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall")
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # usewd by clang-check
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # required by reflection generator (by clang tool fmwk actually)
 
-add_subdirectory(data_types)
-add_subdirectory(usage_examples)
-add_subdirectory(clang_generator)
+
+# point cmake to own redistributable files, to use them in tests and examples
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/redist/cmake")
+
+add_subdirectory(example_reflected_lib)
+add_subdirectory(tests)
 
